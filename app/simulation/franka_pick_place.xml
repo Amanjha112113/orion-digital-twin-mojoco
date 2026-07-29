@@ -1,0 +1,121 @@
+<mujoco model="franka_pick_place">
+  <compiler angle="radian"/>
+  <option timestep="0.002" gravity="0 0 -9.81" cone="elliptic" impratio="10"/>
+
+  <default>
+    <geom condim="6" friction="1.0 0.005 0.0001" solimp="0.99 0.999 0.001" solref="0.01 1"/>
+    <joint damping="0.5"/>
+  </default>
+
+  <asset>
+    <texture type="2d" name="floor_tex" builtin="checker"
+             rgb1="0.15 0.25 0.45" rgb2="0.08 0.15 0.28" width="512" height="512"/>
+    <material name="floor_mat" texture="floor_tex" texrepeat="8 8"/>
+    <material name="arm_white"  rgba="0.94 0.94 0.96 1" shininess="0.8"/>
+    <material name="arm_dark"   rgba="0.12 0.12 0.16 1" shininess="0.7"/>
+    <material name="arm_grey"   rgba="0.55 0.57 0.60 1" shininess="0.9"/>
+    <material name="gripper_m"  rgba="0.88 0.88 0.90 1"/>
+    <material name="phone_m"    rgba="0.05 0.05 0.08 1" shininess="0.95"/>
+    <material name="screen_m"   rgba="0.15 0.55 0.98 1" shininess="1.0"/>
+    <material name="station_m"  rgba="0.18 0.72 0.38 1"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 4.5" dir="0 0 -1" diffuse="0.85 0.85 0.85" castshadow="true"/>
+    <geom name="floor" type="plane" size="5 5 0.1" material="floor_mat"/>
+
+    <!-- Assembly Target Station -->
+    <body name="station" pos="-0.40 0.20 0.02">
+      <geom type="box" size="0.13 0.09 0.02" material="station_m"/>
+    </body>
+
+    <!-- Mobile Phone (free body so gravity + contacts work) -->
+    <body name="phone" pos="0.42 0.20 0.025">
+      <freejoint name="phone_free"/>
+      <geom name="phone_body" type="box" size="0.038 0.076 0.008"
+            material="phone_m" mass="0.12"
+            condim="6" friction="1.5 0.01 0.001"
+            solimp="0.99 0.999 0.001" solref="0.005 1"/>
+      <geom name="phone_screen" type="box" size="0.034 0.068 0.001"
+            pos="0 0 0.009" material="screen_m" contype="0" conaffinity="0"/>
+    </body>
+
+    <!-- Base -->
+    <body name="base" pos="0 0 0">
+      <geom type="cylinder" size="0.11 0.065" pos="0 0 0.065" material="arm_white"/>
+
+      <!-- J1: shoulder pan -->
+      <body name="L1" pos="0 0 0.14">
+        <joint name="j1" type="hinge" axis="0 0 1" range="-2.89 2.89" damping="1.0"/>
+        <geom type="cylinder" size="0.085 0.095" pos="0 0 0.095" material="arm_white"/>
+
+        <!-- J2: shoulder lift -->
+        <body name="L2" pos="0 0 0.19">
+          <joint name="j2" type="hinge" axis="0 1 0" range="-1.76 1.76" damping="1.0"/>
+          <geom type="capsule" size="0.075" fromto="0 0 0 0 0.13 0.18" material="arm_white"/>
+          <geom type="sphere" size="0.08" material="arm_dark"/>
+
+          <!-- J3: arm roll -->
+          <body name="L3" pos="0 0.13 0.18">
+            <joint name="j3" type="hinge" axis="0 0 1" range="-2.89 2.89" damping="0.8"/>
+            <geom type="cylinder" size="0.065 0.11" pos="0 0 0.11" material="arm_white"/>
+
+            <!-- J4: elbow -->
+            <body name="L4" pos="0 0 0.22">
+              <joint name="j4" type="hinge" axis="0 -1 0" range="-3.07 -0.06" damping="0.8"/>
+              <geom type="capsule" size="0.060" fromto="0 0 0 0 -0.12 0.15" material="arm_white"/>
+              <geom type="sphere" size="0.065" material="arm_dark"/>
+
+              <!-- J5: forearm roll -->
+              <body name="L5" pos="0 -0.12 0.15">
+                <joint name="j5" type="hinge" axis="0 0 1" range="-2.89 2.89" damping="0.5"/>
+                <geom type="cylinder" size="0.055 0.095" pos="0 0 0.095" material="arm_white"/>
+
+                <!-- J6: wrist pitch -->
+                <body name="L6" pos="0 0 0.17">
+                  <joint name="j6" type="hinge" axis="0 1 0" range="-0.01 3.75" damping="0.5"/>
+                  <geom type="sphere" size="0.060" material="arm_dark"/>
+                  <geom type="cylinder" size="0.050 0.07" pos="0 0.07 0" quat="0.707 0.707 0 0" material="arm_white"/>
+
+                  <!-- J7: wrist roll + gripper -->
+                  <body name="L7" pos="0 0.13 0">
+                    <joint name="j7" type="hinge" axis="0 0 1" range="-2.89 2.89" damping="0.3"/>
+                    <geom type="box" size="0.055 0.045 0.038" material="arm_white"/>
+
+                    <body name="hand" pos="0 0.055 0">
+                      <geom type="box" size="0.085 0.038 0.048" material="gripper_m"/>
+                      <!-- Left finger -->
+                      <body name="lf" pos="-0.038 0.048 -0.018">
+                        <geom type="box" size="0.010 0.038 0.013"
+                              material="arm_dark"
+                              condim="6" friction="2.0 0.01 0.001"
+                              solimp="0.99 0.999 0.001" solref="0.005 1"/>
+                      </body>
+                      <!-- Right finger -->
+                      <body name="rf" pos="0.038 0.048 -0.018">
+                        <geom type="box" size="0.010 0.038 0.013"
+                              material="arm_dark"
+                              condim="6" friction="2.0 0.01 0.001"
+                              solimp="0.99 0.999 0.001" solref="0.005 1"/>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <position joint="j1" kp="200" ctrlrange="-2.89 2.89"/>
+    <position joint="j2" kp="200" ctrlrange="-1.76 1.76"/>
+    <position joint="j3" kp="200" ctrlrange="-2.89 2.89"/>
+    <position joint="j4" kp="200" ctrlrange="-3.07 -0.06"/>
+    <position joint="j5" kp="80"  ctrlrange="-2.89 2.89"/>
+    <position joint="j6" kp="80"  ctrlrange="-0.01 3.75"/>
+    <position joint="j7" kp="40"  ctrlrange="-2.89 2.89"/>
+  </actuator>
+</mujoco>

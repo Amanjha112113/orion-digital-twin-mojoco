@@ -1,0 +1,12 @@
+Few-shot repair strategies:
+Issue: vibration_spike
+Strategy:
+- Reduce RPM by 15%
+- Re-align hip joints
+- Lubricate joints
+
+Issue: overheating
+Strategy:
+- Activate auxiliary coolant
+- Reduce RPM by 25%
+- Distribute torque load to neighbor joints

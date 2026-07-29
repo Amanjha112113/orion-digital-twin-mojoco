@@ -1,0 +1,14 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+node_modules/
+build/
+dist/
+*.db
+*.log
+.DS_Store
+QNA_FOR_JUDGE.md
+.vscode/
+.mcp.json

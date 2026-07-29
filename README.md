@@ -6,7 +6,9 @@
 [![LangGraph](https://img.shields.io/badge/Orchestration-LangGraph-purple)](https://langchain.com)
 [![MuJoCo](https://img.shields.io/badge/Physics-MuJoCo-red)](https://mujoco.org)
 
-**ORION-FACTORY** is a state-of-the-art **Autonomous Self-Healing Digital Twin**. It simulates a robotic manufacturing environment in 3D physics (MuJoCo) and uses a swarm of 6 specialized AI agents (powered by LangGraph and Grok/Llama 3.2) to instantly detect, diagnose, and repair hardware failures in real-time—completely eliminating human-in-the-loop downtime.
+**ORION-FACTORY** is a state-of-the-art **Autonomous Self-Healing Digital Twin**. It simulates a robotic manufacturing environment in 3D physics (MuJoCo) and uses a swarm of 6 specialized AI agents (powered by LangGraph and Grok/Llama 3.2) to instantly detect, diagnose, and repair hardware failures in real-time—completely eliminating human-in-the-loop downtime. 
+
+The entire system is monitored and controlled through a **high-performance React 18 dashboard**, featuring **Three.js** for real-time 3D simulation rendering and **Plotly.js** for sub-second telemetry visualization.
 
 This document explains **everything** about this project—from the fundamental problem in manufacturing to the complete code architecture and the journey of an anomaly. 
 
@@ -224,7 +226,15 @@ orion-factory/
 - **AI & Orchestration:** Python, LangGraph, Grok API, Ollama (Llama 3.2 fallback)
 - **Physics Simulation:** MuJoCo (C++ Physics Engine via DeepMind), Gymnasium
 - **Backend & APIs:** FastAPI, WebSockets, Uvicorn, SQLite (for metrics)
-- **Frontend Dashboard:** React 18, Tailwind CSS, Vite, Lucide Icons, Recharts (for live graphing)
+- **Frontend Dashboard:** React 18 (Create React App), Plotly.js / React-Plotly.js (for high-performance live telemetry charting), Three.js (for 3D rendering), and Lucide React (for iconography).
+
+### Frontend Tools & Frameworks Detailed
+The frontend architecture is optimized for real-time streaming data and complex visual rendering:
+- **React 18 (CRA):** Provides the component-based UI architecture, scaffolded with Create React App (`react-scripts`).
+- **Plotly.js:** Used for complex, high-frequency data visualizations (e.g., live torque and health score graphs). It natively handles dense datasets far better than basic charting libraries.
+- **Three.js:** Powers the browser-based 3D rendering context, enabling the visual bridging of the MuJoCo simulation directly on the client side.
+- **Lucide React:** Supplies a clean and consistent iconography set for the operations dashboard.
+- **WebSockets:** A custom `useWebSocket` hook enables sub-second, bi-directional streaming of sensor telemetry and AI control signals between the React frontend and FastAPI backend, completely avoiding HTTP polling overhead.
 
 ---
 

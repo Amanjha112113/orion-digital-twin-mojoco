@@ -127,6 +127,9 @@ class SimRunner:
         except Exception:
             self._phone_qadr = 7
 
+        import mujoco.viewer
+        self.viewer = mujoco.viewer.launch_passive(self.model, self.data, show_left_ui=True, show_right_ui=True)
+
         # Home position
         self._reset_phone()
         logger.info(f"MuJoCo fallback model loaded from {xml_path}")
@@ -449,6 +452,9 @@ class SimRunner:
 
         mujoco.mj_step(self.model, self.data)
 
+        if hasattr(self, 'viewer') and self.viewer.is_running():
+            self.viewer.sync()
+
         qpos = list(map(float, self.data.qpos))
         qvel = list(map(float, self.data.qvel))
         max_vel = float(max(abs(v) for v in qvel[7:14])) if len(qvel) >= 14 else 0.0
@@ -484,9 +490,9 @@ class SimRunner:
             health_score = 42
         else:
             # Slower, separate cooldown durations for different physical anomalies
-            # Vibration normalizes over ~4 seconds, Temperature takes ~7 seconds
-            self.vibration = round(max(0.15, self.vibration - 0.003), 3)
-            self.temp = round(max(65.0, self.temp - 0.1), 1)
+            # Vibration normalizes over ~10 seconds, Temperature takes ~10 seconds
+            self.vibration = round(max(0.15, self.vibration - 0.0013), 4)
+            self.temp = round(max(65.0, self.temp - 0.027), 2)
             self.rpm = round(min(1500.0, self.rpm + 5), 1)
             health_score = int(min(100, max(88, 98 - int(max_velocity * 1.5))))
 

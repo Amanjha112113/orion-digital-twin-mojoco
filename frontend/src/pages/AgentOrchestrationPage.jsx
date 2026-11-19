@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AnimatedLangGraph } from '../components/AnimatedLangGraph';
 import { TerminalLog } from '../components/TerminalLog';
 import { HealingProgressBar } from '../components/HealthGauge';
-import { Shield, Zap, Flame, RotateCcw, AlertOctagon, CheckCircle2 } from 'lucide-react';
+import { Shield, Zap, Flame, AlertOctagon, CheckCircle2 } from 'lucide-react';
 
 export function AgentOrchestrationPage({ state }) {
   const [loadingFault, setLoadingFault] = useState(false);
@@ -20,16 +20,7 @@ export function AgentOrchestrationPage({ state }) {
     }
   };
 
-  const handleHeal = async () => {
-    setLoadingFault(true);
-    try {
-      await fetch('http://localhost:8000/api/heal', { method: 'POST' });
-    } catch (e) {
-      console.error('Heal endpoint error:', e);
-    } finally {
-      setTimeout(() => setLoadingFault(false), 500);
-    }
-  };
+
 
   return (
     <div className="space-y-6 font-sans">
@@ -38,7 +29,7 @@ export function AgentOrchestrationPage({ state }) {
         <div>
           <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2.5">
             <Shield className="text-purple-600" />
-            Agent Orchestration Workstation &amp; Live Execution Console
+            Agent RAG Pipeline &amp; Orchestration Workstation
           </h2>
           <p className="text-sm text-slate-500 mt-1">
             Stateful LangGraph multi-agent execution with live particle routing &amp; streaming logs
@@ -99,18 +90,18 @@ export function AgentOrchestrationPage({ state }) {
             </div>
           </button>
 
-          {/* Reset / Heal Button */}
+          {/* Hardware Fault Button */}
           <button
-            onClick={handleHeal}
+            onClick={() => handleInjectFault('hardware')}
             disabled={loadingFault}
-            className="p-4 rounded-xl border-2 border-emerald-300 hover:border-emerald-500 bg-emerald-50/50 hover:bg-emerald-50 transition-all flex items-center gap-3 group active:scale-95 disabled:opacity-50 text-left"
+            className="p-4 rounded-xl border-2 border-indigo-300 hover:border-indigo-500 bg-indigo-50/50 hover:bg-indigo-50 transition-all flex items-center gap-3 group active:scale-95 disabled:opacity-50 text-left"
           >
-            <div className="p-3 rounded-lg bg-emerald-500 text-white shadow-sm group-hover:scale-105 transition-transform">
-              <RotateCcw size={24} />
+            <div className="p-3 rounded-lg bg-indigo-500 text-white shadow-sm group-hover:scale-105 transition-transform">
+              <Zap size={24} />
             </div>
             <div>
-              <span className="text-sm font-extrabold text-emerald-700 block">✅ Reset / Force Heal</span>
-              <span className="text-[11px] text-slate-500 block">Restore baseline physics</span>
+              <span className="text-sm font-extrabold text-indigo-700 block">⚙️ Inject Hardware Fault</span>
+              <span className="text-[11px] text-slate-500 block">Joint encoder failure</span>
             </div>
           </button>
         </div>

@@ -25,3 +25,6 @@ class OrionState(TypedDict):
     # 6. Visualization Layer
     dashboard_metrics: Dict[str, Any]        # Cost averted, token usage, etc.
     graph_status: str              # "HEALTHY" | "DIAGNOSING" | "HEALING"
+    
+    # 7. Hardware Fault Tracking
+    hardware_fault_active: Optional[bool]    # True if hardware fault is injected

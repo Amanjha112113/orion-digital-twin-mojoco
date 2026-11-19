@@ -95,39 +95,68 @@ def dashboard_agent(state: OrionState) -> OrionState:
     
     health = state.get("health_score", 100)
     repair_status = state.get("repair_status", "IDLE")
+    sensor_data = state.get("sensor_data", {})
+    hardware_fault_active = state.get("hardware_fault_active", False)
     
-    # Track the duration of the fault
-    if repair_status in ["RUNNING", "IN_PROGRESS"] and FAULT_START_TIME is None:
-        import time
-        FAULT_START_TIME = time.time()
-    
-    # Trigger report generation only exactly when repair succeeds
-    if repair_status == "SUCCESS":
-        duration = 0
-        if FAULT_START_TIME is not None:
-            import time
-            duration = int(time.time() - FAULT_START_TIME)
-            FAULT_START_TIME = None
-            
-        fault_reason = state.get("root_causes", ["Unknown fault"])[0] if state.get("root_causes") else "Unknown fault"
-        generate_financial_report(fault_reason, duration)
-        # Reset to IDLE so we only generate the report once per fix!
-        state["repair_status"] = "IDLE"
-    
-    # Define active graph state for visual highlight in frontend
-    if health < 70:
-        if repair_status == "RUNNING" or repair_status == "IN_PROGRESS":
-            graph_status = "HEALING"
-        else:
-            graph_status = "DIAGNOSING"
+    # Hardware faults: Do NOT generate financial reports or mark as SUCCESS
+    if hardware_fault_active:
+        graph_status = "HARDWARE_FAILURE"  # Special status for unsolvable faults
+        logger.error("🚨 Hardware fault active - system in permanent failure state")
     else:
-        graph_status = "HEALTHY"
+        # Track the duration of the fault
+        if repair_status in ["RUNNING", "IN_PROGRESS"] and FAULT_START_TIME is None:
+            import time
+            FAULT_START_TIME = time.time()
         
+        # Trigger report generation only exactly when repair succeeds
+        if repair_status == "SUCCESS":
+            duration = 0
+            if FAULT_START_TIME is not None:
+                import time
+                duration = int(time.time() - FAULT_START_TIME)
+                FAULT_START_TIME = None
+                
+            fault_reason = state.get("root_causes", ["Unknown fault"])[0] if state.get("root_causes") else "Unknown fault"
+            generate_financial_report(fault_reason, duration)
+            # Reset to IDLE so we only generate the report once per fix!
+            state["repair_status"] = "IDLE"
+        
+        # Define active graph state for visual highlight in frontend
+        if health < 70:
+            if repair_status == "RUNNING" or repair_status == "IN_PROGRESS":
+                graph_status = "HEALING"
+            else:
+                graph_status = "DIAGNOSING"
+        else:
+            graph_status = "HEALTHY"
+    
+    # Hardware fault detection
+    hardware_fault_detected = False
+    hardware_fault_details = {}
+    
+    rpm = sensor_data.get("rpm", 1500)
+    vibration = sensor_data.get("vibration", 0.15)
+    temp = sensor_data.get("temp", 65)
+    
+    # Check for hardware fault signatures (low RPM + elevated vibration/temp)
+    if hardware_fault_active or (rpm < 800 and (vibration > 0.6 or temp > 80)):
+        hardware_fault_detected = True
+        hardware_fault_details = {
+            "status": "CRITICAL - UNSOLVABLE",
+            "type": "Hardware Encoder Failure",
+            "rpm": rpm,
+            "vibration": vibration,
+            "temperature": temp,
+            "description": "Physical hardware damage detected - Self-healing CANNOT resolve - Component replacement required",
+            "repair_attempts": "CONTINUOUS FAILURE" if hardware_fault_active else "N/A"
+        }
+    
     state["dashboard_metrics"] = {
         "active_tokens": 420,  # mock usage tracker for LLM evaluation
         "sensor_health_index": health,
-        "financial_report": LAST_FINANCIAL_REPORT
+        "financial_report": LAST_FINANCIAL_REPORT,
+        "hardware_fault": hardware_fault_details if hardware_fault_detected else None
     }
     state["graph_status"] = graph_status
-    logger.info(f"Dashboard metrics prepared. Status: {graph_status}")
+    logger.info(f"Dashboard metrics prepared. Status: {graph_status}, Hardware Fault: {hardware_fault_detected}")
     return state

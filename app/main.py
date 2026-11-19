@@ -58,6 +58,11 @@ async def trigger_overheat():
     fault_injector.trigger_overheat_fault()
     return {"message": "Overheat fault injected successfully."}
 
+@app.post("/api/fault/hardware")
+async def trigger_hardware():
+    fault_injector.trigger_hardware_fault()
+    return {"message": "Hardware fault injected successfully."}
+
 @app.post("/api/heal")
 async def trigger_heal():
     fault_injector.reset()

@@ -54,6 +54,7 @@ class SimRunner:
         self.fault_active = False
         self.fault_type = None
         self.fault_start_time = 0.0
+        self.hardware_fault_permanent = False  # Hardware faults are permanent
 
         # Auto-phase tracking (exposed to dashboard)
         self.auto_phase = "STOPPED"
@@ -162,14 +163,30 @@ class SimRunner:
         self.fault_active = True
         self.fault_type = fault_type
         self.fault_start_time = time.time()
-        if fault_type == "overheat" or fault_type == "overheat_thermal":
+        
+        if fault_type == "hardware":
+            # Hardware faults are PERMANENT and CRITICAL
+            self.hardware_fault_permanent = True
+            self.vibration = 0.75
+            self.temp = 82.0
+            self.rpm = 500.0
+            self.auto_phase = "STOPPED"  # Force stop immediately
+            logger.error("⚠️  CRITICAL HARDWARE FAULT - SYSTEM LOCKDOWN - UNSOLVABLE")
+        elif fault_type == "overheat" or fault_type == "overheat_thermal":
+            self.hardware_fault_permanent = False
             self.temp = 88.0
             self.vibration = 0.45
         else:
+            self.hardware_fault_permanent = False
             self.vibration = 0.95
             self.temp = 78.0
 
     def clear_faults(self):
+        # Hardware faults CANNOT be cleared - they are permanent
+        if self.hardware_fault_permanent:
+            logger.warning("❌ Cannot clear hardware fault - physical replacement required!")
+            return
+            
         if self.fault_active:
             logger.info("✅ Fault injection stopped. System entering natural cooldown.")
             self.fault_active = False
@@ -194,8 +211,13 @@ class SimRunner:
         Action: [dx, dy, dz, gripper]  ∈ [-1, 1]
           gripper > 0 → open, gripper < 0 → close
         """
+        # Hardware faults: FREEZE completely (no movement at all)
+        if self.hardware_fault_permanent:
+            action = np.zeros(self._action_dim, dtype=np.float32)
+            return action
+            
         if self.fault_active:
-            # Shake on fault – large random actions
+            # Shake on fault – large random actions (for vibration/overheat)
             return np.random.uniform(-1.0, 1.0, self._action_dim).astype(np.float32)
             
         if self.vibration > 0.4 or self.temp > 75.0:
@@ -391,7 +413,11 @@ class SimRunner:
         # 7 joint target positions (radians)
         tq = [0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0]
 
-        if self.fault_active:
+        # Hardware faults: FREEZE completely at current position
+        if self.hardware_fault_permanent:
+            for i in range(self.nu):
+                tq[i] = self.data.qpos[7 + i]  # Hold current position
+        elif self.fault_active:
             # Vibration fault: add high-frequency noise to all targets
             for i in range(self.nu):
                 self.data.ctrl[i] = self.data.qpos[i + self._phone_qadr - self._phone_qadr + i] \
@@ -443,7 +469,10 @@ class SimRunner:
 
         # Write PD position targets (from_xml_path model uses <position> actuators)
         for i in range(self.nu):
-            if self.fault_active:
+            if self.hardware_fault_permanent:
+                # Hardware fault: FREEZE at current position (no shaking)
+                self.data.ctrl[i] = self.data.qpos[7 + i]
+            elif self.fault_active:
                 self.data.ctrl[i] = self.data.qpos[7 + i] + 0.5 * math.sin(t * 30.0 + i * 1.4)
             elif self.vibration > 0.4 or self.temp > 75.0:
                 self.data.ctrl[i] = tq[i] # already set to current qpos above
@@ -478,16 +507,24 @@ class SimRunner:
 
         # ── Telemetry bookkeeping ───────────────────────────────────────
         if self.fault_active:
-            if self.fault_type == "vibration_spike":
+            if self.fault_type == "hardware":
+                # Hardware faults: NO COOLDOWN - permanent critical state
+                self.vibration = round(0.70 + random.uniform(0.05, 0.10), 3)
+                self.temp = round(80.0 + random.uniform(0, 4), 1)
+                self.rpm = round(450 + random.uniform(-50, 50), 1)  # Erratic low RPM
+                health_score = 25  # Critical failure
+                
+            elif self.fault_type == "vibration_spike":
                 self.vibration = round(0.85 + random.uniform(0.10, 0.30), 3)
                 self.temp = min(110.0, round(self.temp + random.uniform(0.5, 1.5), 1))
                 self.rpm = round(self.rpm + random.uniform(-20, 20), 1)
+                health_score = 42
             else:  # overheat
                 self.vibration = round(0.35 + random.uniform(0.05, 0.15), 3)
                 self.temp = min(110.0, round(self.temp + random.uniform(1.0, 2.5), 1))
                 self.rpm = round(self.rpm - random.uniform(10, 30), 1)
+                health_score = 42
 
-            health_score = 42
         else:
             # Slower, separate cooldown durations for different physical anomalies
             # Vibration normalizes over ~10 seconds, Temperature takes ~10 seconds
@@ -507,6 +544,7 @@ class SimRunner:
             "auto_phase":   self.auto_phase,
             "cycle_count":  self.cycle_count,
             "max_cycles":   self.max_cycles,
+            "hardware_fault_active": self.hardware_fault_permanent,
             "joints": {
                 "shoulder_pan":  round(qpos[0], 3) if qpos else 0.0,
                 "shoulder_lift": round(qpos[1], 3) if len(qpos) > 1 else 0.0,

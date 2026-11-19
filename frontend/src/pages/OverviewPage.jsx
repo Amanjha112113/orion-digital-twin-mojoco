@@ -11,6 +11,7 @@ export function OverviewPage({ state, telemetry }) {
   const cycleCount = telemetry?.cycle_count ?? 0;
   const maxCycles = telemetry?.max_cycles ?? 30;
   const rul = state?.predicted_rul || 3600;
+  const hardwareFault = state?.dashboard_metrics?.hardware_fault || null;
 
   const isFault = healthScore < 70 || graphStatus !== 'HEALTHY';
 
@@ -73,6 +74,70 @@ export function OverviewPage({ state, telemetry }) {
 
       {/* Financial & Operational KPI Board */}
       <MetricsBoard state={state} />
+
+      {/* Hardware Fault Alert (Agent 6) - Persistent and Unsolvable */}
+      {hardwareFault && (
+        <div className="bg-gradient-to-br from-rose-950/95 to-red-950/95 backdrop-blur-xl p-6 rounded-2xl border-2 border-rose-500/70 shadow-2xl shadow-rose-900/50 animate-pulse">
+          <div className="flex items-start gap-4">
+            <div className="p-3 rounded-xl bg-rose-500 text-white shadow-lg animate-pulse">
+              <AlertTriangle size={28} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-rose-200 flex items-center gap-2">
+                🔧 Agent 6: CRITICAL HARDWARE FAULT DETECTED
+              </h3>
+              <p className="text-sm text-slate-300 mt-1 font-medium">
+                {hardwareFault.description}
+              </p>
+              
+              {/* Repair Attempts Status */}
+              <div className="mt-3 bg-slate-950/80 p-3 rounded-lg border border-rose-800/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-rose-300 font-mono font-bold">SELF-HEALING ACTIVE</span>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  System attempting automated repair protocols... <span className="text-rose-400 font-bold">FAILING CONTINUOUSLY</span>
+                  <br />
+                  ⚠️ Hardware damage cannot be resolved through software healing
+                </p>
+              </div>
+
+              <div className="mt-4 grid grid-cols-3 gap-4">
+                <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                  <span className="text-xs text-slate-400 font-mono block">RPM</span>
+                  <span className="text-lg font-bold text-rose-400 font-mono">{hardwareFault.rpm?.toFixed(0)}</span>
+                  <span className="text-[10px] text-rose-400 font-mono block">CRITICAL LOW</span>
+                </div>
+                <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                  <span className="text-xs text-slate-400 font-mono block">Vibration</span>
+                  <span className="text-lg font-bold text-amber-400 font-mono">{hardwareFault.vibration?.toFixed(2)}</span>
+                  <span className="text-[10px] text-amber-400 font-mono block">ERRATIC</span>
+                </div>
+                <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                  <span className="text-xs text-slate-400 font-mono block">Temp (°C)</span>
+                  <span className="text-lg font-bold text-orange-400 font-mono">{hardwareFault.temperature?.toFixed(0)}</span>
+                  <span className="text-[10px] text-orange-400 font-mono block">ELEVATED</span>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-2 flex-wrap">
+                <span className="px-3 py-1.5 rounded-full bg-rose-500 text-white text-xs font-bold font-mono animate-pulse">
+                  {hardwareFault.status}
+                </span>
+                <span className="px-3 py-1.5 rounded-full bg-red-600 text-white text-xs font-bold font-mono">
+                  {hardwareFault.type}
+                </span>
+                <span className="px-3 py-1.5 rounded-full bg-slate-800 text-rose-300 text-xs font-bold font-mono border border-rose-700">
+                  SYSTEM STOPPED
+                </span>
+                <span className="px-3 py-1.5 rounded-full bg-amber-900 text-amber-200 text-xs font-bold font-mono border border-amber-700">
+                  REPAIR: {hardwareFault.repair_attempts}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Grid: Health Score Dial & RUL Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

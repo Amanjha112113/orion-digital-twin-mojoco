@@ -271,22 +271,31 @@ OLLAMA_HOST="http://localhost:11434"
 LANGGRAPH_DEV_PORT="8000"
 
 # Simulation configuration
-MUJOCO_MODEL="Ant-v4"
+MUJOCO_MODEL="FetchPickAndPlace-v4"
 ```
 
 ---
 
 ## 10. Running the Demo
 
-We provide a single unified script that launches the FastAPI backend, the MuJoCo simulation window, and the Vite frontend simultaneously.
+### Option 1: All-in-One Script (Recommended)
+
+From the project root directory, run:
 
 ```bash
-bash start_services.sh
+./run.sh
 ```
 
-*(Alternatively, you can run `bash scripts/run_backend.sh` and `bash scripts/run_frontend.sh` in separate terminal tabs if you prefer isolated logging.)*
+> **Note:** On macOS, MuJoCo needs to run via `mjpython` in the foreground to safely render its native Cocoa 3D GUI window. `run.sh` handles this automatically:
+> - Activates `venv/`
+> - Starts the React Dashboard in the background at `http://localhost:3000`
+> - Launches the native MuJoCo 3D window and the FastAPI backend server at `http://localhost:8000` in the foreground
+>
+> To stop everything, press `Ctrl + C` in that terminal.
 
-Navigate to **`http://localhost:5173`** in your web browser. You should see the main Operations Dashboard.
+*(Alternatively, you can run `./start_services.sh` to auto-clean existing port listeners and launch `run.sh`, or run the backend and frontend in separate terminals if you prefer isolated logging.)*
+
+Navigate to **`http://localhost:3000`** in your web browser. You should see the main Operations Dashboard.
 
 ---
 

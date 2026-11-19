@@ -9,11 +9,21 @@ def scheduler_agent(state: OrionState) -> OrionState:
     sensor_data = state.get("sensor_data", {})
     temp = sensor_data.get("temp", 65.0)
     vibration = sensor_data.get("vibration", 0.15)
+    hardware_fault_active = state.get("hardware_fault_active", False)
     
     actions = state.get("repair_actions", [])
     current_status = state.get("repair_status", "IDLE")
     
-    if current_status == "IDLE" and (temp > 75.0 or vibration > 0.4):
+    # Hardware faults: Keep trying to heal but it will NEVER succeed
+    if hardware_fault_active:
+        state["repair_status"] = "RUNNING"  # Continuously attempting
+        actions = [
+            {"action": "emergency_shutdown", "value": True},
+            {"action": "attempting_encoder_reset", "value": "FAILING"},
+            {"action": "physical_replacement_required", "value": True}
+        ]
+        logger.warning("⚠️  Hardware fault detected - repair attempts will FAIL")
+    elif current_status == "IDLE" and (temp > 75.0 or vibration > 0.4):
         state["repair_status"] = "RUNNING"
         actions = [
             {"action": "reduce_rpm", "value": 15},

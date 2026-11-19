@@ -10,15 +10,33 @@ def root_cause_agent(state: OrionState) -> OrionState:
     sensor_data = state.get("sensor_data", {})
     vibration = sensor_data.get("vibration", 0.15)
     temp = sensor_data.get("temp", 65.0)
+    rpm = sensor_data.get("rpm", 1500)
+    hardware_fault_active = state.get("hardware_fault_active", False)
     
+    # Do not overwrite the diagnosis if a repair is already in progress
+    if state.get("repair_status") in ["RUNNING", "IN_PROGRESS"] and state.get("root_causes"):
+        return state
+    
+    # CRITICAL: Hardware faults are UNSOLVABLE
+    if hardware_fault_active:
+        diagnoses = [
+            "CRITICAL: Physical encoder hardware failure detected",
+            "Mechanical servo lockup - requires component replacement",
+            "System attempting self-healing but CANNOT RESOLVE hardware damage"
+        ]
+        confidence = 1.0
+        state["root_causes"] = diagnoses
+        state["diagnosis_confidence"] = confidence
+        return state
+        
     # Pre-packaged diagnosis rules baseline
     diagnoses = []
     confidence = 0.90
     
-    if vibration > 0.5:
+    if vibration > 0.4:
         diagnoses.append("Structural misalignment in joint actuator housing")
         diagnoses.append("Actuator bearing friction due to mechanical stress")
-    if temp > 80.0:
+    if temp > 75.0:
         diagnoses.append("Thermal dissipation failure in drive motor coil")
         diagnoses.append("Overloading of adjacent joint actuators")
         
@@ -47,7 +65,7 @@ def root_cause_agent(state: OrionState) -> OrionState:
                 ],
                 "temperature": 0.2
             }
-            response = httpx.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=2.0)
+            response = httpx.post("https://api.groq.com/openai/v1/chat/completions", json=payload, headers=headers, timeout=10.0)
             if response.status_code == 200:
                 result = response.json()
                 content = result["choices"][0]["message"]["content"]

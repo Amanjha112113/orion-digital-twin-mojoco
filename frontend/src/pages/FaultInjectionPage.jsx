@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { HealingProgressBar } from '../components/HealthGauge';
-import { Zap, Flame, RotateCcw, AlertOctagon, CheckCircle2 } from 'lucide-react';
+import { Zap, Flame, AlertOctagon, CheckCircle2 } from 'lucide-react';
 
 export function FaultInjectionPage({ state }) {
   const [loadingFault, setLoadingFault] = useState(false);
@@ -19,17 +19,7 @@ export function FaultInjectionPage({ state }) {
     }
   };
 
-  const handleHeal = async () => {
-    setLoadingFault(true);
-    setLastAction('heal');
-    try {
-      await fetch('http://localhost:8000/api/heal', { method: 'POST' });
-    } catch (e) {
-      console.error('Heal endpoint error:', e);
-    } finally {
-      setTimeout(() => setLoadingFault(false), 500);
-    }
-  };
+
 
   return (
     <div className="space-y-6">
@@ -99,15 +89,26 @@ export function FaultInjectionPage({ state }) {
         </button>
       </div>
 
-      {/* Reset / Heal */}
+      {/* Hardware Fault Injection */}
       <div className="space-y-4">
-        <div className="flex justify-end">
+        <div className="grid grid-cols-1 gap-6">
           <button
-            onClick={handleHeal}
+            onClick={() => handleInjectFault('hardware')}
             disabled={loadingFault}
-            className="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold font-mono border border-emerald-400 transition-all flex items-center gap-2 shadow-sm active:scale-95 disabled:opacity-50"
+            className="bg-white p-8 rounded-2xl border-2 border-indigo-300 hover:border-indigo-500 hover:shadow-lg hover:shadow-indigo-100 transition-all duration-200 flex flex-col items-center justify-center gap-4 group active:scale-95 disabled:opacity-50"
           >
-            <RotateCcw size={18} /> Reset / Force Heal
+            <div className="p-5 rounded-2xl bg-indigo-50 text-indigo-500 group-hover:scale-110 group-hover:bg-indigo-100 transition-all duration-200 border border-indigo-200">
+              <Zap size={48} strokeWidth={1.5} />
+            </div>
+            <div className="text-center">
+              <span className="text-xl font-extrabold text-indigo-600 block">⚙️ Inject Hardware Fault</span>
+              <span className="text-xs text-slate-500 block mt-1.5 max-w-[220px]">
+                Simulates mechanical failure — joint encoder errors and servo lockup
+              </span>
+            </div>
+            <div className="px-4 py-1.5 rounded-full bg-indigo-500 text-white text-xs font-bold font-mono tracking-wider">
+              FAULT_TYPE: HARDWARE
+            </div>
           </button>
         </div>
 

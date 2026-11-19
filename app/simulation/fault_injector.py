@@ -23,6 +23,10 @@ class FaultInjector:
         logger.warning("Overheating fault triggered!")
         self.runner.inject_fault("overheat")
 
+    def trigger_hardware_fault(self):
+        logger.warning("Hardware fault triggered!")
+        self.runner.inject_fault("hardware")
+
     def reset(self):
         logger.info("Fault reset/heal command issued.")
         self.runner.clear_faults()

@@ -3,7 +3,7 @@
 I have identified the core issue based on your screenshot and description.
 
 ## The Error: Empty-Handed Delivery
-1. **The "Red Dot"**: The red dot you are seeing is MuJoCo's **Mocap Body** (the invisible target handle the inverse kinematics solver uses to pull the arm). It is pointing at the box because the robot is currently in the `PICK_APPROACH` phase trying to target the box! 
+1. **The "Green Dot"**: The red dot you are seeing is MuJoCo's **Mocap Body** (the invisible target handle the inverse kinematics solver uses to pull the arm). It is pointing at the box because the robot is currently in the `PICK_APPROACH` phase trying to target the box! 
 2. **The Real Problem**: The robot is descending onto the box too aggressively. Its fingers are colliding with the box and knocking it away. Because the current code doesn't verify if it actually grabbed the box, it blindly proceeds to the `TRANSPORT` and `PLACE` phases with an **empty hand**! This is why it appears to "fail to place the box at the target"—it never had the box to begin with!
 
 ## Proposed Changes

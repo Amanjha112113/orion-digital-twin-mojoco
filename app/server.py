@@ -57,6 +57,7 @@ async def telemetry_broadcast_loop():
                     "health_score": raw_data["health_score"],
                     "failure_probability": round(1.0 - (raw_data["health_score"] / 100.0), 2),
                     "predicted_rul": int(raw_data["health_score"] * 36),
+                    "hardware_fault_active": raw_data.get("hardware_fault_active", False),
                     "root_causes": output_state.get("root_causes", []),
                     "diagnosis_confidence": output_state.get("diagnosis_confidence", 0.0),
                     "repair_actions": output_state.get("repair_actions", []),
@@ -72,8 +73,10 @@ async def telemetry_broadcast_loop():
                 
                 # If the repair action is running/in progress, clear the active physical simulation fault
                 # so the system can begin its natural cooldown sequence.
+                # EXCEPT for hardware faults - those are permanent and cannot be healed
                 if output_state.get("repair_status") in ["SUCCESS", "IN_PROGRESS", "RUNNING"]:
-                    fault_injector.reset()
+                    if not raw_data.get("hardware_fault_active", False):
+                        fault_injector.reset()
                 
                 # Prepare 100ms payload for React Frontend Dashboard
                 payload = {
@@ -101,6 +104,7 @@ async def telemetry_broadcast_loop():
                         "post_repair_health": output_state.get("post_repair_health", 100),
                         "dashboard_metrics": output_state.get("dashboard_metrics", {}),
                         "graph_status": output_state.get("graph_status", "HEALTHY"),
+                        "hardware_fault_active": output_state.get("hardware_fault_active", False),
                         "system_errors": error_logger.get_errors(),
                         "sensor_data": input_state["sensor_data"]
                     }

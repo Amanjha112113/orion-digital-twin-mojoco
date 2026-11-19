@@ -24,4 +24,4 @@ sleep 2
 # Start Native 3D Simulation & Backend Server in Foreground
 # Running in foreground allows macOS to safely render the native GUI window
 echo "Launching Native 3D MuJoCo Window & Backend (Port 8000)..."
-mjpython app/main.py
+venv/bin/mjpython app/main.py
